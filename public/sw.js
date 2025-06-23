@@ -1,5 +1,5 @@
-let Static_Cache_Name='static-v1'
-let Dynamic_Cache_Name='dynamic-v1'
+let Static_Cache_Name='static-v5'
+let Dynamic_Cache_Name='dynamic-v3'
 const  Static_files=[
     '/',
     '/index.html',
@@ -173,4 +173,57 @@ self.addEventListener('fetch', (e)=>{
            }))
      }
 
+})
+
+
+
+self.addEventListener('notificationclick',(event)=>{
+    let notification=event.notification;
+    let action=event.action;
+    console.log(notification,'notification');
+    if(action==='confirm'){
+        console.log('Confirm was chosen!');
+        notification.close()
+    }else{
+        console.log(action, 'action');
+        event.waitUntil(
+            clients.matchAll()
+                .then(clients=>{
+                   const client=clients.find(c=>{
+                       return c.visibilityState==='visible'
+                   })
+                    if(client!==undefined){
+                        client.navigate(notification.data.url);
+                        client.focus()
+                    }else{
+                        clients.openWindow(notification.data.url)
+                    }
+                    notification.close()
+                })
+        )
+    }
+})
+
+self.addEventListener('notificationclose', (event)=>{
+    console.log('Notification was closed!', event)
+})
+
+self.addEventListener('push', (event)=>{
+  console.log('Push notification received', event);
+  let data={title:'New', content:'Something new happened!', openUrl:'/'}
+    if(event.data){
+      data=JSON.parse(event.data.text())
+    }
+
+    let options={
+        body: data.content,
+        icon: '/src/images/icons/app-icon-96x96.png',
+        badge: '/src/images/icons/app-icon-96x96.png',
+        data: {
+            url: data.openUrl
+        }
+    }
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    )
 })
